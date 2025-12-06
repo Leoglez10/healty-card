@@ -1,0 +1,5 @@
+{
+  "name": "Tarjetas Sanas",
+  "description": "Una aplicación web para la gestión inteligente de tarjetas de crédito y finanzas familiares, permitiendo rastrear gastos, visualizar deudas y evitar el sobreendeudamiento.",
+  "requestFramePermissions": []
+}
