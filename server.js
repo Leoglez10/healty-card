@@ -32,13 +32,29 @@ app.post('/api/usuarios', async (req, res) => {
     const { nombre, email, telefono } = req.body;
     try {
         const result = await db.query(
-            'INSERT INTO usuarios (nombre, email, telefono) VALUES ($1, $2, $3) RETURNING *',
+            'INSERT INTO usuarios (nombre, email, telefono, presupuesto_mensual) VALUES ($1, $2, $3, 0) RETURNING *',
             [nombre, email, telefono]
         );
         res.status(201).json(result.rows[0]);
     } catch (err) {
         console.error(err);
         res.status(500).json({ error: 'Error al crear usuario' });
+    }
+});
+
+app.put('/api/usuarios/:id_usuario/presupuesto', async (req, res) => {
+    const { id_usuario } = req.params;
+    const { presupuesto_mensual } = req.body;
+    try {
+        const result = await db.query(
+            'UPDATE usuarios SET presupuesto_mensual = $1 WHERE id_usuario = $2 RETURNING *',
+            [presupuesto_mensual, id_usuario]
+        );
+        if (result.rows.length === 0) return res.status(404).json({ error: 'Usuario no encontrado' });
+        res.json(result.rows[0]);
+    } catch (err) {
+        console.error(err);
+        res.status(500).json({ error: 'Error al actualizar presupuesto' });
     }
 });
 
@@ -66,6 +82,34 @@ app.post('/api/tarjetas', async (req, res) => {
     } catch (err) {
         console.error(err);
         res.status(500).json({ error: 'Error al crear tarjeta' });
+    }
+});
+
+app.put('/api/tarjetas/:id_tarjeta', async (req, res) => {
+    const { id_tarjeta } = req.params;
+    const { banco, tipo, alias, ultimos_digitos, limite_credito, tasa_interes_mensual, fecha_corte, fecha_pago } = req.body;
+    try {
+        const result = await db.query(
+            `UPDATE tarjetas SET banco=$1, tipo=$2, alias=$3, ultimos_digitos=$4, limite_credito=$5, tasa_interes_mensual=$6, fecha_corte=$7, fecha_pago=$8 WHERE id_tarjeta=$9 RETURNING *`,
+            [banco, tipo, alias, ultimos_digitos, limite_credito, tasa_interes_mensual, fecha_corte, fecha_pago, id_tarjeta]
+        );
+        if (result.rows.length === 0) return res.status(404).json({ error: 'Tarjeta no encontrada' });
+        res.json(result.rows[0]);
+    } catch (err) {
+        console.error(err);
+        res.status(500).json({ error: 'Error al actualizar tarjeta' });
+    }
+});
+
+app.delete('/api/tarjetas/:id_tarjeta', async (req, res) => {
+    const { id_tarjeta } = req.params;
+    try {
+        const result = await db.query('DELETE FROM tarjetas WHERE id_tarjeta = $1 RETURNING *', [id_tarjeta]);
+        if (result.rows.length === 0) return res.status(404).json({ error: 'Tarjeta no encontrada' });
+        res.json({ mensaje: 'Tarjeta eliminada', tarjeta: result.rows[0] });
+    } catch (err) {
+        console.error(err);
+        res.status(500).json({ error: 'Error al eliminar tarjeta' });
     }
 });
 
@@ -98,6 +142,34 @@ app.post('/api/compras', async (req, res) => {
     }
 });
 
+app.put('/api/compras/:id_compra', async (req, res) => {
+    const { id_compra } = req.params;
+    const { descripcion, monto, categoria, fecha, es_msi, meses_msi } = req.body;
+    try {
+        const result = await db.query(
+            `UPDATE compras SET descripcion=$1, monto=$2, categoria=$3, fecha=$4, es_msi=$5, meses_msi=$6 WHERE id_compra=$7 RETURNING *`,
+            [descripcion, monto, categoria, fecha, es_msi, meses_msi, id_compra]
+        );
+        if (result.rows.length === 0) return res.status(404).json({ error: 'Compra no encontrada' });
+        res.json(result.rows[0]);
+    } catch (err) {
+        console.error(err);
+        res.status(500).json({ error: 'Error al actualizar compra' });
+    }
+});
+
+app.delete('/api/compras/:id_compra', async (req, res) => {
+    const { id_compra } = req.params;
+    try {
+        const result = await db.query('DELETE FROM compras WHERE id_compra = $1 RETURNING *', [id_compra]);
+        if (result.rows.length === 0) return res.status(404).json({ error: 'Compra no encontrada' });
+        res.json({ mensaje: 'Compra eliminada', compra: result.rows[0] });
+    } catch (err) {
+        console.error(err);
+        res.status(500).json({ error: 'Error al eliminar compra' });
+    }
+});
+
 // 4. PAGOS
 app.get('/api/pagos/:id_tarjeta', async (req, res) => {
     const { id_tarjeta } = req.params;
@@ -115,16 +187,15 @@ app.post('/api/pagos', async (req, res) => {
     const fechaPago = fecha || new Date();
 
     try {
-        // 1. Verificar tarjeta y usuario
+        // 1. Verificar tarjeta y obtener usuario con presupuesto
         const tarjetaRes = await db.query('SELECT * FROM tarjetas WHERE id_tarjeta = $1', [id_tarjeta]);
         if (tarjetaRes.rows.length === 0) return res.status(404).json({ error: 'Tarjeta no encontrada' });
         const tarjeta = tarjetaRes.rows[0];
 
-        // 2. Calcular Saldo Disponible (Cash Flow)
-        // Ingresos
-        const ingresosRes = await db.query('SELECT SUM(monto) as total FROM ingresos WHERE id_usuario = $1', [tarjeta.id_usuario]);
-        const totalIngresos = parseFloat(ingresosRes.rows[0].total || 0);
+        const usuarioRes = await db.query('SELECT presupuesto_mensual FROM usuarios WHERE id_usuario = $1', [tarjeta.id_usuario]);
+        const presupuesto = parseFloat(usuarioRes.rows[0]?.presupuesto_mensual || 0);
 
+        // 2. Calcular Saldo Disponible (Cash Flow)
         // Egresos Directos (Compras con Débito)
         const debitoRes = await db.query('SELECT id_tarjeta FROM tarjetas WHERE id_usuario = $1 AND tipo = $2', [tarjeta.id_usuario, 'débito']);
         const debitoCardIds = debitoRes.rows.map(r => r.id_tarjeta);
@@ -145,7 +216,7 @@ app.post('/api/pagos', async (req, res) => {
         );
         const totalPagos = parseFloat(pagosRes.rows[0].total || 0);
 
-        const saldoDisponible = totalIngresos - totalDebitPurchases - totalPagos;
+        const saldoDisponible = presupuesto - totalDebitPurchases - totalPagos;
         const montoPagar = parseFloat(monto);
 
         if (montoPagar > saldoDisponible) {
@@ -164,6 +235,34 @@ app.post('/api/pagos', async (req, res) => {
     } catch (err) {
         console.error(err);
         res.status(500).json({ error: 'Error al registrar pago' });
+    }
+});
+
+app.put('/api/pagos/:id_pago', async (req, res) => {
+    const { id_pago } = req.params;
+    const { tipo_pago, monto, metodo, notas, fecha } = req.body;
+    try {
+        const result = await db.query(
+            `UPDATE pagos SET tipo_pago=$1, monto=$2, metodo=$3, notas=$4, fecha=$5 WHERE id_pago=$6 RETURNING *`,
+            [tipo_pago, monto, metodo, notas, fecha, id_pago]
+        );
+        if (result.rows.length === 0) return res.status(404).json({ error: 'Pago no encontrado' });
+        res.json(result.rows[0]);
+    } catch (err) {
+        console.error(err);
+        res.status(500).json({ error: 'Error al actualizar pago' });
+    }
+});
+
+app.delete('/api/pagos/:id_pago', async (req, res) => {
+    const { id_pago } = req.params;
+    try {
+        const result = await db.query('DELETE FROM pagos WHERE id_pago = $1 RETURNING *', [id_pago]);
+        if (result.rows.length === 0) return res.status(404).json({ error: 'Pago no encontrado' });
+        res.json({ mensaje: 'Pago eliminado', pago: result.rows[0] });
+    } catch (err) {
+        console.error(err);
+        res.status(500).json({ error: 'Error al eliminar pago' });
     }
 });
 
@@ -195,6 +294,34 @@ app.post('/api/ingresos', async (req, res) => {
     }
 });
 
+app.put('/api/ingresos/:id_ingreso', async (req, res) => {
+    const { id_ingreso } = req.params;
+    const { fuente, monto, fecha } = req.body;
+    try {
+        const result = await db.query(
+            `UPDATE ingresos SET fuente=$1, monto=$2, fecha=$3 WHERE id_ingreso=$4 RETURNING *`,
+            [fuente, monto, fecha, id_ingreso]
+        );
+        if (result.rows.length === 0) return res.status(404).json({ error: 'Ingreso no encontrado' });
+        res.json(result.rows[0]);
+    } catch (err) {
+        console.error(err);
+        res.status(500).json({ error: 'Error al actualizar ingreso' });
+    }
+});
+
+app.delete('/api/ingresos/:id_ingreso', async (req, res) => {
+    const { id_ingreso } = req.params;
+    try {
+        const result = await db.query('DELETE FROM ingresos WHERE id_ingreso = $1 RETURNING *', [id_ingreso]);
+        if (result.rows.length === 0) return res.status(404).json({ error: 'Ingreso no encontrado' });
+        res.json({ mensaje: 'Ingreso eliminado', ingreso: result.rows[0] });
+    } catch (err) {
+        console.error(err);
+        res.status(500).json({ error: 'Error al eliminar ingreso' });
+    }
+});
+
 // 7. SIMULADOR DE INTERESES (Sin DB)
 app.post('/api/simular-intereses', (req, res) => {
     const { monto_compra, tasa_anual } = req.body;
@@ -221,10 +348,11 @@ app.get('/api/ping', (req, res) => {
 app.get('/api/analisis-financiero/:id_usuario', async (req, res) => {
     const { id_usuario } = req.params;
     try {
-        // 1. Obtener usuario
-        const userResult = await db.query('SELECT nombre FROM usuarios WHERE id_usuario = $1', [id_usuario]);
+        // 1. Obtener usuario con presupuesto
+        const userResult = await db.query('SELECT nombre, presupuesto_mensual FROM usuarios WHERE id_usuario = $1', [id_usuario]);
         if (userResult.rows.length === 0) return res.status(404).json({ error: 'Usuario no encontrado' });
         const usuarioNombre = userResult.rows[0].nombre;
+        const presupuestoMensual = parseFloat(userResult.rows[0].presupuesto_mensual || 0);
 
         // 2. Obtener tarjetas y calcular deuda
         const tarjetasResult = await db.query('SELECT * FROM tarjetas WHERE id_usuario = $1', [id_usuario]);
@@ -298,23 +426,39 @@ app.get('/api/analisis-financiero/:id_usuario', async (req, res) => {
             }));
         }
 
-        // 4. Ingresos
-        const ingResult = await db.query('SELECT SUM(monto) as total FROM ingresos WHERE id_usuario = $1', [id_usuario]);
-        const totalIncome = parseFloat(ingResult.rows[0].total || 0);
-        const netBalance = totalIncome - totalSpending; // Aquí "Spending" son compras, no pagos. Ojo con la lógica contable.
+        // 4. Saldo Disponible (based on presupuesto_mensual)
+        // Compras con débito
+        let totalDebitPurchases = 0;
+        const debitoRes = await db.query('SELECT id_tarjeta FROM tarjetas WHERE id_usuario = $1 AND tipo = $2', [id_usuario, 'débito']);
+        const debitoCardIds = debitoRes.rows.map(r => r.id_tarjeta);
+        if (debitoCardIds.length > 0) {
+            const debRes = await db.query('SELECT SUM(monto) as total FROM compras WHERE id_tarjeta = ANY($1::int[])', [debitoCardIds]);
+            totalDebitPurchases = parseFloat(debRes.rows[0].total || 0);
+        }
+
+        // Pagos a tarjetas de crédito
+        const pagosResAll = await db.query(`
+            SELECT SUM(p.monto) as total 
+            FROM pagos p 
+            JOIN tarjetas t ON p.id_tarjeta = t.id_tarjeta 
+            WHERE t.id_usuario = $1`, [id_usuario]);
+        const totalPagosAll = parseFloat(pagosResAll.rows[0].total || 0);
+
+        // Saldo Disponible = Presupuesto - Gastos Débito - Pagos Crédito
+        const saldoDisponible = presupuestoMensual - totalDebitPurchases - totalPagosAll;
 
         // 5. Recomendaciones
         const recommendations = [];
         if (totalDebt === 0) recommendations.push("🌟 ¡Felicidades! No tienes deudas registradas.");
-        else if (totalDebt > (totalIncome * 0.4)) recommendations.push("⚠️ Tu deuda supera el 40% de tus ingresos. Modera gastos.");
+        else if (totalDebt > (presupuestoMensual * 0.4)) recommendations.push("⚠️ Tu deuda supera el 40% de tu presupuesto. Modera gastos.");
 
         analyzedCards.forEach(c => {
             if (c.estado === 'rojo') recommendations.push(`🚨 La tarjeta ${c.alias} está al límite (${c.porcentaje_utilizado}%). Paga de inmediato.`);
             if (c.estado === 'amarillo') recommendations.push(`👀 Vigila la tarjeta ${c.alias}, estás usando más del 30%.`);
         });
 
-        if (netBalance > 0) recommendations.push("💰 Tienes un saldo positivo (ingresos > compras).");
-        else recommendations.push("📉 Estás gastando más de lo que ingresas.");
+        if (saldoDisponible > 0) recommendations.push("💰 Tienes saldo disponible.");
+        else recommendations.push("📉 Has gastado todo tu presupuesto.");
 
         res.json({
             usuario: usuarioNombre,
@@ -323,9 +467,9 @@ app.get('/api/analisis-financiero/:id_usuario', async (req, res) => {
             interes_estimado_mensual: totalDebt * 0.025,
             tarjetas: analyzedCards,
             gastos_por_categoria: gastosPorCategoria,
-            ingresos_mes: totalIncome,
+            ingresos_mes: presupuestoMensual,
             gastos_mes: totalSpending,
-            saldo_neto: netBalance,
+            saldo_neto: saldoDisponible,
             recomendaciones: recommendations
         });
 

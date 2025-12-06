@@ -1,8 +1,8 @@
 import React, { useState, useEffect } from 'react';
 import { PieChart, Pie, Cell, ResponsiveContainer, Tooltip as RechartsTooltip, BarChart, Bar, XAxis, YAxis, CartesianGrid, Legend } from 'recharts';
-import { AlertCircle, TrendingUp, TrendingDown, DollarSign, Wallet } from 'lucide-react';
+import { AlertCircle, TrendingUp, TrendingDown, DollarSign, Wallet, Edit2 } from 'lucide-react';
 import { Usuario, AnalisisFinanciero } from '../types';
-import { getFinancialAnalysis, formatCurrency } from '../services/data';
+import { getFinancialAnalysis, formatCurrency, updateUserBudget } from '../services/data';
 
 interface DashboardProps {
   currentUser: Usuario;
@@ -10,14 +10,21 @@ interface DashboardProps {
   onUserChange: (userId: number) => void;
 }
 
-const StatCard = ({ title, amount, icon: Icon, trend, color }: any) => (
+const StatCard = ({ title, amount, icon: Icon, trend, color, onEdit }: any) => (
   <div className="bg-white p-6 rounded-2xl shadow-sm border border-gray-100 flex items-start justify-between hover:shadow-md transition-shadow">
     <div>
       <p className="text-sm font-medium text-gray-500 mb-1">{title}</p>
       <h3 className="text-2xl font-bold text-gray-900">{formatCurrency(amount)}</h3>
     </div>
-    <div className={`p-3 rounded-xl ${color}`}>
-      <Icon size={24} className="text-white" />
+    <div className="flex flex-col gap-2 items-end">
+      <div className={`p-3 rounded-xl ${color}`}>
+        <Icon size={24} className="text-white" />
+      </div>
+      {onEdit && (
+        <button onClick={onEdit} className="text-xs text-indigo-600 hover:text-indigo-800 flex items-center gap-1">
+          <Edit2 size={12} /> Editar
+        </button>
+      )}
     </div>
   </div>
 );
@@ -25,14 +32,31 @@ const StatCard = ({ title, amount, icon: Icon, trend, color }: any) => (
 export const Dashboard: React.FC<DashboardProps> = ({ currentUser, users, onUserChange }) => {
   const [data, setData] = useState<AnalisisFinanciero | null>(null);
   const [loading, setLoading] = useState(true);
+  const [isEditingBudget, setIsEditingBudget] = useState(false);
+  const [newBudget, setNewBudget] = useState<number>(0);
 
   useEffect(() => {
     setLoading(true);
     getFinancialAnalysis(currentUser.id_usuario)
-      .then(setData)
+      .then((analysis) => {
+        setData(analysis);
+        setNewBudget(analysis.ingresos_mes);
+      })
       .catch(console.error)
       .finally(() => setLoading(false));
   }, [currentUser.id_usuario]);
+
+  const handleSaveBudget = async () => {
+    try {
+      await updateUserBudget(currentUser.id_usuario, newBudget);
+      // Reload analysis
+      const updatedAnalysis = await getFinancialAnalysis(currentUser.id_usuario);
+      setData(updatedAnalysis);
+      setIsEditingBudget(false);
+    } catch (err) {
+      alert('Error al guardar presupuesto');
+    }
+  };
 
   if (loading || !data) return <div className="p-8 text-center text-gray-500">Cargando análisis financiero...</div>;
 
@@ -82,18 +106,50 @@ export const Dashboard: React.FC<DashboardProps> = ({ currentUser, users, onUser
           color="bg-emerald-500"
         />
         <StatCard
-          title="Ingresos Mes"
+          title="Presupuesto Mes"
           amount={data.ingresos_mes}
           icon={DollarSign}
           color="bg-blue-500"
+          onEdit={() => setIsEditingBudget(true)}
         />
         <StatCard
-          title="Saldo Neto"
+          title="Saldo Disponible"
           amount={data.saldo_neto}
           icon={TrendingUp}
           color={data.saldo_neto >= 0 ? "bg-indigo-500" : "bg-orange-500"}
         />
       </div>
+
+      {/* Budget Edit Modal */}
+      {isEditingBudget && (
+        <div className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4">
+          <div className="bg-white rounded-2xl w-full max-w-md p-6 animate-in zoom-in-95 duration-200">
+            <h2 className="text-xl font-bold mb-4">Editar Presupuesto Mensual</h2>
+            <p className="text-gray-500 text-sm mb-4">¿Cuánto dinero tienes disponible este mes?</p>
+            <input
+              type="number"
+              className="w-full p-3 border rounded-lg text-lg font-semibold"
+              value={newBudget}
+              onChange={(e) => setNewBudget(Number(e.target.value))}
+              placeholder="Ej: 15000"
+            />
+            <div className="flex gap-3 mt-6">
+              <button
+                onClick={() => setIsEditingBudget(false)}
+                className="flex-1 px-4 py-2 bg-gray-100 hover:bg-gray-200 rounded-lg text-gray-700 font-medium"
+              >
+                Cancelar
+              </button>
+              <button
+                onClick={handleSaveBudget}
+                className="flex-1 px-4 py-2 bg-indigo-600 hover:bg-indigo-700 rounded-lg text-white font-bold"
+              >
+                Guardar
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* Charts Section */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
@@ -172,8 +228,8 @@ export const Dashboard: React.FC<DashboardProps> = ({ currentUser, users, onUser
                   <p className="text-xs text-gray-500">{card.banco}</p>
                 </div>
                 <div className={`px-3 py-1 rounded-full text-xs font-bold ${card.estado === 'verde' ? 'bg-green-100 text-green-700' :
-                    card.estado === 'amarillo' ? 'bg-yellow-100 text-yellow-700' :
-                      'bg-red-100 text-red-700'
+                  card.estado === 'amarillo' ? 'bg-yellow-100 text-yellow-700' :
+                    'bg-red-100 text-red-700'
                   }`}>
                   {card.porcentaje_utilizado}% Uso
                 </div>

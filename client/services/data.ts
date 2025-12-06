@@ -20,6 +20,16 @@ export const createUser = async (user: Omit<Usuario, 'id_usuario' | 'fecha_regis
   return res.json();
 };
 
+export const updateUserBudget = async (userId: number, presupuesto: number): Promise<Usuario> => {
+  const res = await fetch(`${API_URL}/usuarios/${userId}/presupuesto`, {
+    method: 'PUT',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ presupuesto_mensual: presupuesto })
+  });
+  if (!res.ok) throw new Error('Error al actualizar presupuesto');
+  return res.json();
+};
+
 export const getCards = async (userId: number): Promise<Tarjeta[]> => {
   const res = await fetch(`${API_URL}/tarjetas/${userId}`);
   if (!res.ok) throw new Error('Failed to fetch cards');
@@ -101,6 +111,68 @@ export const simulateInterest = async (data: { monto_compra: number, tasa_anual:
   });
   if (!res.ok) throw new Error('Failed to simulate interest');
   return res.json();
+};
+
+// --- UPDATE / DELETE Functions ---
+
+export const updateCard = async (id: number, card: Partial<Tarjeta>): Promise<Tarjeta> => {
+  const res = await fetch(`${API_URL}/tarjetas/${id}`, {
+    method: 'PUT',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(card)
+  });
+  if (!res.ok) throw new Error('Error al actualizar tarjeta');
+  return res.json();
+};
+
+export const deleteCard = async (id: number): Promise<void> => {
+  const res = await fetch(`${API_URL}/tarjetas/${id}`, { method: 'DELETE' });
+  if (!res.ok) throw new Error('Error al eliminar tarjeta');
+};
+
+export const updatePurchase = async (id: number, purchase: Partial<Compra>): Promise<Compra> => {
+  const res = await fetch(`${API_URL}/compras/${id}`, {
+    method: 'PUT',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(purchase)
+  });
+  if (!res.ok) throw new Error('Error al actualizar compra');
+  return res.json();
+};
+
+export const deletePurchase = async (id: number): Promise<void> => {
+  const res = await fetch(`${API_URL}/compras/${id}`, { method: 'DELETE' });
+  if (!res.ok) throw new Error('Error al eliminar compra');
+};
+
+export const updatePayment = async (id: number, payment: Partial<Pago>): Promise<Pago> => {
+  const res = await fetch(`${API_URL}/pagos/${id}`, {
+    method: 'PUT',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(payment)
+  });
+  if (!res.ok) throw new Error('Error al actualizar pago');
+  return res.json();
+};
+
+export const deletePayment = async (id: number): Promise<void> => {
+  const res = await fetch(`${API_URL}/pagos/${id}`, { method: 'DELETE' });
+  if (!res.ok) throw new Error('Error al eliminar pago');
+};
+
+export const updateIncome = async (id: number, income: Partial<Ingreso>): Promise<Ingreso> => {
+  const res = await fetch(`${API_URL}/ingresos/${id}`, {
+    method: 'PUT',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(income)
+  });
+  if (!res.ok) throw new Error('Error al actualizar ingreso');
+  return res.json();
+};
+
+export const deleteIncome = async (id: number): Promise<void> => {
+  const res = await fetch(`${API_URL}/ingresos/${id}`, { method: 'DELETE' });
+  if (!res.ok) throw new Error('Error al eliminar ingreso');
 };
 
 export const formatCurrency = (amount: number) => {
