@@ -71,12 +71,12 @@ app.get('/api/tarjetas/:id_usuario', async (req, res) => {
 });
 
 app.post('/api/tarjetas', async (req, res) => {
-    const { id_usuario, banco, tipo, alias, ultimos_digitos, limite_credito, tasa_interes_mensual, fecha_corte, fecha_pago } = req.body;
+    const { id_usuario, banco, tipo, alias, ultimos4, limite_credito, tasa_interes_mensual, fecha_corte_dia, fecha_pago_dia } = req.body;
     try {
         const result = await db.query(
-            `INSERT INTO tarjetas (id_usuario, banco, tipo, alias, ultimos_digitos, limite_credito, tasa_interes_mensual, fecha_corte, fecha_pago) 
+            `INSERT INTO tarjetas (id_usuario, banco, tipo, alias, ultimos4, limite_credito, tasa_interes_mensual, fecha_corte_dia, fecha_pago_dia) 
        VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9) RETURNING *`,
-            [id_usuario, banco, tipo, alias, ultimos_digitos, limite_credito, tasa_interes_mensual, fecha_corte, fecha_pago]
+            [id_usuario, banco, tipo, alias, ultimos4, limite_credito, tasa_interes_mensual, fecha_corte_dia, fecha_pago_dia]
         );
         res.status(201).json(result.rows[0]);
     } catch (err) {
@@ -87,11 +87,11 @@ app.post('/api/tarjetas', async (req, res) => {
 
 app.put('/api/tarjetas/:id_tarjeta', async (req, res) => {
     const { id_tarjeta } = req.params;
-    const { banco, tipo, alias, ultimos_digitos, limite_credito, tasa_interes_mensual, fecha_corte, fecha_pago } = req.body;
+    const { banco, tipo, alias, ultimos4, limite_credito, tasa_interes_mensual, fecha_corte_dia, fecha_pago_dia } = req.body;
     try {
         const result = await db.query(
-            `UPDATE tarjetas SET banco=$1, tipo=$2, alias=$3, ultimos_digitos=$4, limite_credito=$5, tasa_interes_mensual=$6, fecha_corte=$7, fecha_pago=$8 WHERE id_tarjeta=$9 RETURNING *`,
-            [banco, tipo, alias, ultimos_digitos, limite_credito, tasa_interes_mensual, fecha_corte, fecha_pago, id_tarjeta]
+            `UPDATE tarjetas SET banco=$1, tipo=$2, alias=$3, ultimos4=$4, limite_credito=$5, tasa_interes_mensual=$6, fecha_corte_dia=$7, fecha_pago_dia=$8 WHERE id_tarjeta=$9 RETURNING *`,
+            [banco, tipo, alias, ultimos4, limite_credito, tasa_interes_mensual, fecha_corte_dia, fecha_pago_dia, id_tarjeta]
         );
         if (result.rows.length === 0) return res.status(404).json({ error: 'Tarjeta no encontrada' });
         res.json(result.rows[0]);

@@ -1,8 +1,8 @@
 export interface Usuario {
   id_usuario: number;
   nombre: string;
-  email: string;
-  telefono?: string;
+  rol?: string;
+  activo?: boolean;
   presupuesto_mensual: number;
 }
 
@@ -12,11 +12,12 @@ export interface Tarjeta {
   banco: string;
   tipo: 'crédito' | 'débito';
   alias: string;
-  ultimos_digitos: string;
+  ultimos4: string;
   limite_credito: number;
+  fecha_corte_dia: number;
+  fecha_pago_dia: number;
+  tasa_interes_anual?: number;
   tasa_interes_mensual: number;
-  fecha_corte: number;
-  fecha_pago: number;
 }
 
 export interface Compra {

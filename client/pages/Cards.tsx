@@ -25,11 +25,11 @@ export const Cards: React.FC<CardsProps> = ({ currentUser }) => {
     tipo: 'crédito',
     banco: '',
     alias: '',
-    ultimos_digitos: '',
+    ultimos4: '',
     limite_credito: 0,
     tasa_interes_mensual: 0,
-    fecha_corte: 1,
-    fecha_pago: 1
+    fecha_corte_dia: 1,
+    fecha_pago_dia: 1
   });
 
   const handleSave = async (e: React.FormEvent) => {
@@ -42,7 +42,7 @@ export const Cards: React.FC<CardsProps> = ({ currentUser }) => {
       setCards([...cards, createdCard]);
       setIsModalOpen(false);
       // Reset form...
-      setNewCard({ ...newCard, banco: '', alias: '', ultimos_digitos: '' });
+      setNewCard({ ...newCard, banco: '', alias: '', ultimos4: '' });
     } catch (err) {
       console.error("Error creating card:", err);
       alert("Error al crear la tarjeta");
@@ -99,7 +99,7 @@ export const Cards: React.FC<CardsProps> = ({ currentUser }) => {
                   </div>
                 </div>
                 <div className="font-mono text-xl tracking-widest text-shadow-sm">
-                  •••• •••• •••• {card.ultimos_digitos}
+                  •••• •••• •••• {card.ultimos4}
                 </div>
               </div>
 
@@ -122,14 +122,14 @@ export const Cards: React.FC<CardsProps> = ({ currentUser }) => {
                   <Calendar size={16} className="text-indigo-500" />
                   <div>
                     <p className="text-[10px] text-gray-400 uppercase">Corte</p>
-                    <p className="font-semibold">Día {card.fecha_corte}</p>
+                    <p className="font-semibold">Día {card.fecha_corte_dia}</p>
                   </div>
                 </div>
                 <div className="flex items-center gap-2 text-gray-600">
                   <Calendar size={16} className="text-indigo-500" />
                   <div>
                     <p className="text-[10px] text-gray-400 uppercase">Pago</p>
-                    <p className="font-semibold">Día {card.fecha_pago}</p>
+                    <p className="font-semibold">Día {card.fecha_pago_dia}</p>
                   </div>
                 </div>
                 {card.tipo === 'crédito' && (
@@ -167,7 +167,7 @@ export const Cards: React.FC<CardsProps> = ({ currentUser }) => {
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-1">Últimos 4</label>
                   <input required maxLength={4} className="w-full p-2 border rounded-lg" placeholder="1234"
-                    value={newCard.ultimos_digitos} onChange={e => setNewCard({ ...newCard, ultimos_digitos: e.target.value })} />
+                    value={newCard.ultimos4} onChange={e => setNewCard({ ...newCard, ultimos4: e.target.value })} />
                 </div>
               </div>
               <div className="grid grid-cols-2 gap-4">
@@ -190,12 +190,12 @@ export const Cards: React.FC<CardsProps> = ({ currentUser }) => {
                 <div>
                   <label className="block text-xs font-medium text-gray-700 mb-1">Día Corte</label>
                   <input type="number" max={31} min={1} className="w-full p-2 border rounded-lg"
-                    value={newCard.fecha_corte || ''} onChange={e => setNewCard({ ...newCard, fecha_corte: Number(e.target.value) })} />
+                    value={newCard.fecha_corte_dia || ''} onChange={e => setNewCard({ ...newCard, fecha_corte_dia: Number(e.target.value) })} />
                 </div>
                 <div>
                   <label className="block text-xs font-medium text-gray-700 mb-1">Día Pago</label>
                   <input type="number" max={31} min={1} className="w-full p-2 border rounded-lg"
-                    value={newCard.fecha_pago || ''} onChange={e => setNewCard({ ...newCard, fecha_pago: Number(e.target.value) })} />
+                    value={newCard.fecha_pago_dia || ''} onChange={e => setNewCard({ ...newCard, fecha_pago_dia: Number(e.target.value) })} />
                 </div>
                 <div>
                   <label className="block text-xs font-medium text-gray-700 mb-1">Interés %</label>
