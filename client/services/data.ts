@@ -64,7 +64,10 @@ export const createPayment = async (payment: Omit<Pago, 'id_pago' | 'fecha_creac
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify(payment)
   });
-  if (!res.ok) throw new Error('Failed to create payment');
+  if (!res.ok) {
+    const errorData = await res.json().catch(() => ({}));
+    throw new Error(errorData.detalle || errorData.error || 'Error al registrar pago');
+  }
   return res.json();
 };
 

@@ -116,9 +116,9 @@ export const Movements: React.FC<MovementsProps> = ({ currentUser }) => {
       }
       setIsModalOpen(false);
       setFormData({ ...formData, monto: '', descripcion: '' });
-    } catch (err) {
+    } catch (err: any) {
       console.error("Error creating movement:", err);
-      alert("Error al registrar movimiento");
+      alert(err.message || "Error al registrar movimiento");
     }
   };
 
