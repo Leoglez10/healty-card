@@ -41,7 +41,7 @@ En la sección "Environment Variables", agrega:
 
 | Key | Value |
 |-----|-------|
-| `DATABASE_URL` | `postgresql://postgres.rhobbnpftrvgynrxazxr:iiMpFZBOXSArNVLF@aws-1-us-east-2.pooler.supabase.com:5432/postgres` |
+| `DATABASE_URL` | `postgresql://postgres.<TU_PROJECT_REF>:<TU_PASSWORD>@<TU_HOST>.pooler.supabase.com:5432/postgres` |
 | `NODE_VERSION` | `18` (opcional, para asegurar compatibilidad) |
 
 ### 4. Desplegar

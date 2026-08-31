@@ -26,7 +26,7 @@
 
 ```env
 # Base de datos
-DATABASE_URL=postgresql://postgres.rhobbnpftrvgynrxazxr:iiMpFZBOXSArNVLF@aws-1-us-east-2.pooler.supabase.com:5432/postgres
+DATABASE_URL=postgresql://postgres.<TU_PROJECT_REF>:<TU_PASSWORD>@<TU_HOST>.pooler.supabase.com:5432/postgres
 
 # Servidor
 PORT=3000
@@ -40,10 +40,10 @@ JWT_SECRET=tu_secreto_aqui
 
 | Campo | Valor |
 |-------|-------|
-| **Host** | aws-1-us-east-2.pooler.supabase.com |
+| **Host** | <TU_HOST>.pooler.supabase.com |
 | **Puerto** | 5432 |
-| **Usuario** | postgres.rhobbnpftrvgynrxazxr |
-| **Contraseña** | iiMpFZBOXSArNVLF |
+| **Usuario** | postgres.<TU_PROJECT_REF> |
+| **Contraseña** | Nunca versionar. Definir en la variable de entorno `DATABASE_URL`. |
 | **Base de datos** | postgres |
 | **Proveedor** | Supabase (AWS) |
 | **SSL** | Requerido (rejectUnauthorized: false) |
@@ -940,7 +940,7 @@ Environment: Node
 
 **3. Variables de entorno en Render:**
 ```
-DATABASE_URL=postgresql://postgres.rhobbnpftrvgynrxazxr:iiMpFZBOXSArNVLF@aws-1-us-east-2.pooler.supabase.com:5432/postgres
+DATABASE_URL=postgresql://postgres.<TU_PROJECT_REF>:<TU_PASSWORD>@<TU_HOST>.pooler.supabase.com:5432/postgres
 PORT=3000
 NODE_ENV=production
 ```

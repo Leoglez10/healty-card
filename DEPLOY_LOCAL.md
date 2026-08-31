@@ -33,7 +33,7 @@ cd ..
 Asegúrate de que el archivo `.env` en la raíz tenga las credenciales correctas:
 
 ```env
-DATABASE_URL=postgresql://postgres.rhobbnpftrvgynrxazxr:iiMpFZBOXSArNVLF@aws-1-us-east-2.pooler.supabase.com:5432/postgres
+DATABASE_URL=postgresql://postgres.<TU_PROJECT_REF>:<TU_PASSWORD>@<TU_HOST>.pooler.supabase.com:5432/postgres
 PORT=3000
 ```
 > **Nota:** Estas credenciales son de una base de datos de prueba en Supabase. Si usas tu propia BD, actualiza `DATABASE_URL`.
